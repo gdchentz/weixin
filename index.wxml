@@ -1,0 +1,55 @@
+<!-- pages/ble/index.wxml -->
+<view class="page-container">
+  <view class="content-area">
+    <button type="primary" bindtap="initBluetooth" wx:if="{{!connected && !connecting}}">启动蓝牙</button>
+    <button type="default" disabled wx:if="{{connecting}}">连接中{{retryCount > 0 ? ' - 重试'+retryCount : ''}}...</button>
+    
+    <view wx:if="{{devices.length || showDeviceList}}" class="device-list">
+      <text class="section-title">发现设备：</text>
+      <scroll-view scroll-y class="scroll-view device-scroll">
+        <view wx:for="{{devices}}" wx:key="deviceId" 
+              class="device-item" 
+              bindtap="connectDevice" 
+              data-id="{{item.deviceId}}">
+          <text class="name">{{item.localName || item.name || '未知设备'}}</text>
+          <view class="device-info-group">
+            <text class="device-id">{{item.deviceId.substr(0,10)}}...</text>
+            <text class="rssi">信号: {{item.RSSI || '未知'}}dBm</text>
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+    
+    <view wx:if="{{connected}}" class="connected-panel">
+      <view class="device-info">
+        <text>已连接设备: {{currentDevice.localName || currentDevice.name || currentDevice.deviceId.substr(0,12)}}</text>
+        <text>信号强度: {{currentDevice.RSSI || '未知'}}dBm</text>
+      </view>
+      
+      <view class="action-buttons">
+        <button bindtap="sendData">发送测试数据</button>
+        <button type="warn" bindtap="disconnect">断开连接</button>
+      </view>
+      
+      <view class="received-form">
+        <text class="rdataItem">接收数据：</text>
+        <text class="received-data ">{{receivedData || '等待数据...'}}</text>
+      </view>
+
+    </view>
+  </view>
+  
+  <view class="log-panel">
+    <view class="log-header">
+      <text class="section-title">操作日志</text>
+      <text class="clear-btn" bindtap="clearLog">清空</text>
+    </view>
+    <scroll-view scroll-y class="log-scroll" scroll-top="{{logScrollTop}}">
+      <view wx:for="{{log}}" wx:key="index" class="log-item">
+        <text>{{item}}</text>
+      </view>
+    </scroll-view>
+  </view>
+
+
+</view>
