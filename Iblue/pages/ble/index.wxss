@@ -1,0 +1,184 @@
+/* pages/ble/index.wxss */
+.page-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: 24rpx;
+  font-family: 'PingFang SC', sans-serif;
+  padding-bottom: env(safe-area-inset-bottom);
+  box-sizing: border-box;
+}
+
+.content-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 10vh;
+}
+
+.device-list {
+  width: 100%;
+  margin-top: 20rpx;
+  border-radius: 16rpx;
+  padding: 10rpx;
+  background-color: #f9f9f9;
+  border: 1rpx solid #eee;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.scroll-view {
+  width: 100%;
+}
+
+/* 设备列表区域 - 固定高度只显示3项 */
+.device-scroll {
+  max-height: 300rpx; /* 只显示3项高度 */
+  overflow-y: auto;
+}
+
+.device-item {
+  padding: 5rpx 0; /* 增加间距 */
+  border-bottom: 0rpx solid #f0f0f0;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 2rpx;
+}
+
+.name {
+  font-weight: bold;
+  margin-bottom: 8rpx;
+  font-size: 28rpx;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.device-info-group {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6rpx;
+}
+
+.device-id {
+  color: #7f8c8d;
+  font-size: 24rpx;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 60%;
+}
+
+.rssi {
+  color: #27ae60;
+  font-size: 24rpx;
+  text-align: right;
+  min-width: 150rpx;
+  max-width: 40%;
+}
+
+/* 连接面板 - 宽度与设备列表一致 */
+.connected-panel {
+  width: 100%;
+  height: 480rpx;
+  margin: 24rpx 0;
+  padding: 14rpx;
+  background-color: #f9f9f9;
+  border-radius: 16rpx;
+  border: 4rpx solid #afacadce;
+  box-sizing: border-box;
+}
+
+.device-info {
+  display: inline-block;
+  flex-direction: column;
+  margin: 10rpx 0;
+  font-size: 26rpx;
+  word-break: break-all;
+}
+
+.device-info > text {
+  margin-bottom: 8rpx;
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin: 24rpx 0;
+}
+
+.action-buttons button {
+  flex: 1;
+  margin: 0 8rpx;
+  font-size: 26rpx;
+}
+
+
+
+.received-data {
+  display: block;
+  height: 200rpx;
+  line-height: 25rpx;
+  padding: 12rpx;
+  background: #fff;
+  border: 1rpx solid #ddd;
+  font-family: monospace;
+  border-radius: 8rpx;
+  margin-top: 8rpx ;
+  margin-bottom: 8rpx;
+  word-break: break-all;
+  font-size: 26rpx;
+}
+
+.log-panel {
+  position: fixed;
+  bottom: 30rpx;
+  left: 2%;
+  right: 2%;
+  height: 34vh;
+  z-index: 100;
+  background: #fff;
+  box-shadow: 0 -4rpx 20rpx rgba(0,0,0,0.1);
+  /* padding-bottom: env(safe-area-inset-bottom) ; */
+  padding-bottom:10rxp;
+  box-sizing: border-box;
+}
+
+.log-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20rpx 24rpx 10rpx;
+  border-bottom: 1rpx solid #eee;
+}
+
+.clear-btn {
+  color: #576b95;
+  font-size: 26rpx;
+}
+
+.log-scroll {
+  height: calc(30vh - 60rpx);
+  padding: 0 24rpx;
+  overflow-y: auto;
+}
+
+.log-item {
+  padding: 12rpx 0;
+  font-size: 26rpx;
+  color: #34495e;
+  line-height: 1.5;
+  border-bottom: 1rpx dashed #eaeaea;
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 8rpx;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #39b54a;
+  border-radius: 4rpx;
+}

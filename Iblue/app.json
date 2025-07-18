@@ -1,0 +1,21 @@
+{
+      "pages": ["pages/ble/index"],
+    "permission": {
+      "scope.userLocation": {
+        "desc": "用于搜索和连接蓝牙设备"
+      }
+    },
+    "requiredPrivateInfos": ["getLocation"] ,
+  
+  "window": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "小牛蓝牙",
+    "navigationBarBackgroundColor": "#ffffff",
+    "enableShareAppMessage": true,
+    "enableShareTimeline": true 
+  },
+  "style": "v2",
+  "componentFramework": "glass-easel",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}
