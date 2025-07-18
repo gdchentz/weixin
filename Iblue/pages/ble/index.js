@@ -11,9 +11,9 @@ Page({
     receivedData: "",
     currentDevice: null,
     log: [],
-    serviceId: "",
-    writeCharId: "",
-    notifyCharId: "",
+    serviceId: "6E400001-B5A3-F393-E0A9-E50E24DCCA9E",
+    writeCharId: "6E400003-B5A3-F393-E0A9-E50E24DCCA9E",
+    notifyCharId: "6E400002-B5A3-F393-E0A9-E50E24DCCA9E",
     retryCount: 0,
     logScrollTop: 0,
     showDeviceList: false,
@@ -121,7 +121,10 @@ Page({
       const updatedDevices = [...this.data.devices];
       const knownDevices = {...this.data.knownDevices};
       let hasUpdates = false;
+
+
       
+        
       res.devices.forEach(device => {
         const deviceId = device.deviceId;
         const localName = device.advertisData?.localName || device.name;
@@ -439,7 +442,8 @@ Page({
       deviceId,
       serviceId,
       characteristicId: writeCharId,
-      value: this.hex2ab(data),
+      // value: this.hex2ab(data),
+      value: data,
       success: () => this.log(`📤 发送成功: ${data}`),
       fail: (err) => this.handleError("❌ 发送失败", err)
     });
