@@ -437,13 +437,13 @@ Page({
       this.handleError("❌ 发送失败", { errMsg: "未获取到蓝牙特征值" });
       return;
     }
-    const data = "AABBCCDD";
+    const sdata = "AABBCCDD";
     wx.writeBLECharacteristicValue({
       deviceId,
       serviceId,
       characteristicId: writeCharId,
       // value: this.hex2ab(data),
-      value: data,
+      value: sdata,
       success: () => this.log(`📤 发送成功: ${data}`),
       fail: (err) => this.handleError("❌ 发送失败", err)
     });
