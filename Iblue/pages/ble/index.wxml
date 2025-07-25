@@ -8,7 +8,7 @@
       <text class="section-title">发现设备：</text>
       <scroll-view scroll-y class="scroll-view device-scroll">
         <view wx:for="{{devices}}" wx:key="deviceId" 
-              class="device-item" 
+              class="device-item"   
               bindtap="connectDevice" 
               data-id="{{item.deviceId}}">
           <text class="name">{{item.localName || item.name || '未知设备'}}</text>
@@ -19,6 +19,8 @@
         </view>
       </scroll-view>
     </view>
+    
+
     
     <view wx:if="{{connected}}" class="connected-panel">
       <view class="device-info">
