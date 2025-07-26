@@ -35,7 +35,7 @@
       
       <view class="received-form">
         <text class="rdataItem">接收数据：</text>
-        <text class="received-data ">{{receivedData || '等待数据...'}}</text>
+        <text class="received-data">{{receivedData || '等待数据...'}}</text>
       </view>
 
     </view>
