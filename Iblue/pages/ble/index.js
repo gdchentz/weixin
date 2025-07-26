@@ -27,7 +27,7 @@ Page({
     this.calculateScrollHeight();
   },
   onShareAppMessage() { // 分享给好友
-    return { title: '测试标题', path: '/pages/index/index' };
+    return { title: '小牛蓝牙测试', path: '/pages/index/index' };
   },
   onShareTimeline() { // 分享到朋友圈（需类目支持）
     return { title: '朋友圈标题' };
@@ -442,8 +442,8 @@ Page({
       deviceId,
       serviceId,
       characteristicId: writeCharId,
-      // value: this.hex2ab(data),
-      value: sdata,
+      value: this.hex2ab(sdata),
+      //value: sdata,
       success: () => this.log(`📤 发送成功: ${data}`),
       fail: (err) => this.handleError("❌ 发送失败", err)
     });

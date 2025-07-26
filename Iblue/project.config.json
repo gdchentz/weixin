@@ -37,7 +37,11 @@
     "disableUseStrict": false,
     "minifyWXML": true,
     "showES6CompileOption": false,
-    "useCompilerPlugins": false
+    "useCompilerPlugins": false,
+    "compileWorklet": false,
+    "condition": false,
+    "swc": false,
+    "disableSWC": true
   },
   "libVersion": "3.8.9",
   "compileType": "miniprogram",
