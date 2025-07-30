@@ -1,14 +1,16 @@
 <!-- pages/ble/index.wxml -->
 <view class="page-container">
+  <!-- 统一设备管理区域 -->
   <view class="content-area">
-    <button type="primary" bindtap="initBluetooth" wx:if="{{!connected && !connecting}}">启动蓝牙</button>
-    <button type="default" disabled wx:if="{{connecting}}">连接中{{retryCount > 0 ? ' - 重试'+retryCount : ''}}...</button>
-    
-    <view wx:if="{{devices.length || showDeviceList}}" class="device-list">
-      <text class="section-title">发现设备：</text>
-      <scroll-view scroll-y class="scroll-view device-scroll">
+    <!-- 设备发现区域（连接状态下隐藏） -->
+    <view class="device-list" wx:if="{{!connected}}">
+      <button type="primary" bindtap="initBluetooth" wx:if="{{!connecting}}">启动蓝牙</button>
+      <button type="default" disabled wx:if="{{connecting}}">连接中{{retryCount > 0 ? ' - 重试'+retryCount : ''}}...</button>
+      
+      <scroll-view scroll-y class="scroll-view device-scroll" wx:if="{{devices.length || showDeviceList}}">
+        <text class="section-title">发现设备：</text>
         <view wx:for="{{devices}}" wx:key="deviceId" 
-              class="device-item" 
+              class="device-item"   
               bindtap="connectDevice" 
               data-id="{{item.deviceId}}">
           <text class="name">{{item.localName || item.name || '未知设备'}}</text>
@@ -20,10 +22,11 @@
       </scroll-view>
     </view>
     
-    <view wx:if="{{connected}}" class="connected-panel">
+    <!-- 已连接设备面板（设备发现状态下隐藏） -->
+    <view class="connected-panel" wx:if="{{connected}}">
       <view class="device-info">
         <text>已连接设备: {{currentDevice.localName || currentDevice.name || currentDevice.deviceId.substr(0,12)}}</text>
-        <text>信号强度: {{currentDevice.RSSI || '未知'}}dBm</text>
+        <text>  信号强度: {{currentDevice.RSSI || '未知'}}dBm</text>
       </view>
       
       <view class="action-buttons">
@@ -33,12 +36,12 @@
       
       <view class="received-form">
         <text class="rdataItem">接收数据：</text>
-        <text class="received-data ">{{receivedData || '等待数据...'}}</text>
+        <text class="received-data">{{receivedData || '等待数据...'}}</text>
       </view>
-
     </view>
   </view>
   
+  <!-- 日志面板（始终保持显示） -->
   <view class="log-panel">
     <view class="log-header">
       <text class="section-title">操作日志</text>
@@ -50,6 +53,4 @@
       </view>
     </scroll-view>
   </view>
-
-
 </view>
