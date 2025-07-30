@@ -1,55 +1,97 @@
 <!-- pages/ble/index.wxml -->
 <view class="page-container">
-  <!-- 统一设备管理区域 -->
+  <!-- 设备管理区域 -->
   <view class="content-area">
-    <!-- 设备发现区域（连接状态下隐藏） -->
-    <view class="device-list" wx:if="{{!connected}}">
-      <button type="primary" bindtap="initBluetooth" wx:if="{{!connecting}}">启动蓝牙</button>
-      <button type="default" disabled wx:if="{{connecting}}">连接中{{retryCount > 0 ? ' - 重试'+retryCount : ''}}...</button>
+    <!-- 设备发现区域 -->
+    <view class="device-panel" wx:if="{{!connected}}">
+      <view class="control-group">
+        <button class="btn btn-primary" bindtap="initBluetooth" wx:if="{{!connecting}}">启动蓝牙</button>
+        <button class="btn btn-loading" disabled wx:if="{{connecting}}">
+          <view class="loading-circle"></view>
+          连接中{{retryCount > 0 ? '(重试' + retryCount + '次)' : ''}}
+        </button>
+      </view>
       
-      <scroll-view scroll-y class="scroll-view device-scroll" wx:if="{{devices.length || showDeviceList}}">
-        <text class="section-title">发现设备：</text>
-        <view wx:for="{{devices}}" wx:key="deviceId" 
-              class="device-item"   
-              bindtap="connectDevice" 
-              data-id="{{item.deviceId}}">
-          <text class="name">{{item.localName || item.name || '未知设备'}}</text>
-          <view class="device-info-group">
-            <text class="device-id">{{item.deviceId.substr(0,10)}}...</text>
-            <text class="rssi">信号: {{item.RSSI || '未知'}}dBm</text>
+      <view class="device-section" wx:if="{{devices.length || showDeviceList}}">
+        <text class="section-title">发现设备</text>
+        <scroll-view scroll-y class="device-scroll">
+          <view class="device-container">
+            <block wx:for="{{devices}}" wx:key="deviceId">
+              <view class="device-card" bindtap="connectDevice" data-id="{{item.deviceId}}">
+                <view class="device-header">
+                  <text class="device-name">{{item.localName || item.name || '未知设备'}}</text>
+                  <view class="device-rssi">
+                    <view class="signal-icon" style="height: {{item.RSSI ? (0 - item.RSSI)/5 : 0}}px"></view>
+                    <text>{{item.RSSI || '未知'}}dBm</text>
+                  </view>
+                </view>
+                <text class="device-id">{{item.deviceId.substr(0,12)}}...</text>
+              </view>
+            </block>
           </view>
-        </view>
-      </scroll-view>
+        </scroll-view>
+      </view>
     </view>
     
-    <!-- 已连接设备面板（设备发现状态下隐藏） -->
+    <!-- 已连接设备面板 -->
     <view class="connected-panel" wx:if="{{connected}}">
-      <view class="device-info">
-        <text>已连接设备: {{currentDevice.localName || currentDevice.name || currentDevice.deviceId.substr(0,12)}}</text>
-        <text>  信号强度: {{currentDevice.RSSI || '未知'}}dBm</text>
+      <view class="device-header">
+        <text class="device-status">已连接</text>
+        <text class="device-name">{{currentDevice.localName || currentDevice.name || currentDevice.deviceId.substr(0,12)}}</text>
       </view>
       
-      <view class="action-buttons">
-        <button bindtap="sendData">发送测试数据</button>
-        <button type="warn" bindtap="disconnect">断开连接</button>
+      <view class="connection-details">
+        <view class="detail-card">
+          <text class="detail-label">设备ID</text>
+          <text class="detail-value">{{currentDevice.deviceId.substr(0,12)}}...</text>
+        </view>
+        <view class="detail-card">
+          <text class="detail-label">信号强度</text>
+          <view class="signal-section">
+            <view class="signal-icon" style="height: {{currentDevice.RSSI ? (0 - currentDevice.RSSI)/5 : 0}}px"></view>
+            <text>{{currentDevice.RSSI || '未知'}}dBm</text>
+          </view>
+        </view>
       </view>
       
-      <view class="received-form">
-        <text class="rdataItem">接收数据：</text>
-        <text class="received-data">{{receivedData || '等待数据...'}}</text>
+      <view class="action-group">
+        <button class="btn btn-command" bindtap="sendData">发送测试数据</button>
+        <button class="btn btn-danger" bindtap="disconnect">断开连接</button>
+      </view>
+
+
+      <view class="senddata-panel">
+        <text class="section-title">发送的数据</text>
+        <view class="senddata-view">
+          <textarea class="senddata-content" type="" >{{sendData || '等待数据...'}}</textarea>
+        </view>
+      </view>
+
+      <view class="data-panel">
+        <text class="section-title">接收数据</text>
+        <view class="data-view">
+          <text class="data-content">{{receivedData || '等待数据...'}}</text>
+        </view>
       </view>
     </view>
   </view>
   
-  <!-- 日志面板（始终保持显示） -->
+  <!-- 日志面板 -->
   <view class="log-panel">
     <view class="log-header">
       <text class="section-title">操作日志</text>
-      <text class="clear-btn" bindtap="clearLog">清空</text>
+      <view class="panel-actions">
+        <button class="btn-text" bindtap="clearLog">清空日志</button>
+      </view>
     </view>
+    
     <scroll-view scroll-y class="log-scroll" scroll-top="{{logScrollTop}}">
-      <view wx:for="{{log}}" wx:key="index" class="log-item">
-        <text>{{item}}</text>
+      <view class="log-content">
+        <block wx:for="{{log}}" wx:key="index">
+          <view class="log-item">
+            <text class="log-message">{{item}}</text>
+          </view>
+        </block>
       </view>
     </scroll-view>
   </view>
