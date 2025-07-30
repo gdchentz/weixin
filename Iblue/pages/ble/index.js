@@ -21,17 +21,21 @@ Page({
     isDiscovering: false,
     knownDevices: {},
     connectionTimer: null,
+    deviceId: null, // 初始化为null确保有效状态
   },
   
   onReady() {
     this.calculateScrollHeight();
   },
-  onShareAppMessage() { // 分享给好友
-    return { title: '小牛蓝牙测试', path: '/pages/index/index' };
+  
+  onShareAppMessage() {
+    return { title: '测试标题', path: '/pages/index/index' };
   },
-  onShareTimeline() { // 分享到朋友圈（需类目支持）
+  
+  onShareTimeline() {
     return { title: '朋友圈标题' };
   },
+  
   calculateScrollHeight() {
     const systemInfo = wx.getSystemInfoSync();
     const windowHeight = systemInfo.windowHeight;
@@ -43,7 +47,7 @@ Page({
       if (res[0] && res[1]) {
         const otherHeight = res[0].height - res[1].height;
         const safeArea = systemInfo.safeArea ? windowHeight - systemInfo.safeArea.bottom : 0;
-        const height = Math.max(150, windowHeight - otherHeight -  safeArea);
+        const height = Math.max(150, windowHeight - otherHeight - safeArea);
         
         this.setData({ scrollHeight: height });
       }
@@ -122,9 +126,6 @@ Page({
       const knownDevices = {...this.data.knownDevices};
       let hasUpdates = false;
 
-
-      
-        
       res.devices.forEach(device => {
         const deviceId = device.deviceId;
         const localName = device.advertisData?.localName || device.name;
@@ -197,10 +198,13 @@ Page({
     
     this.setData({ 
       connecting: true, 
-      retryCount: 0 
+      retryCount: 0,
+      // 关键修复：立即存储设备ID
+      deviceId: deviceId
     });
     
     this.log(`🔗 连接设备: ${device.localName || device.name || deviceId.substr(0,6)}...`);
+    this.log(`[DEBUG] 连接开始: 当前deviceId = ${this.data.deviceId}`);
     
     this.setConnectionTimeout(deviceId);
     
@@ -278,27 +282,37 @@ Page({
   handleConnectionError(deviceId, err) {
     this.clearConnectionTimer();
     this.handleError("❌ 连接失败", err);
-    this.setData({ connecting: false });
+    this.setData({ connecting: false, deviceId: null });
     this.forceDisconnect(deviceId);
   },
   
   onConnectSuccess(deviceId, device) {
+    // 关键修复：正确更新deviceId状态
     this.setData({ 
       connected: true,
+      deviceId: deviceId, // 使用成功连接的deviceId
       currentDevice: device,
       isDiscovering: false,
       connecting: false
+    }, () => {
+      // 确认状态更新成功
+      this.log(`✅ 状态更新完成 deviceId: ${this.data.deviceId}`);
+      
+      // 设置连接状态监听
+      wx.onBLEConnectionStateChange((res) => {
+        if (!res.connected) {
+          this.log("⚠️ 连接断开，释放资源");
+          this.setData({ 
+            connected: false,
+            deviceId: null // 清除设备ID
+          });
+          this.startDiscovery();
+        }
+      });
+      
+      // 开始服务发现
+      this.discoverServices(deviceId);
     });
-    
-    wx.onBLEConnectionStateChange((res) => {
-      if (!res.connected) {
-        this.log("⚠️ 连接断开，释放资源");
-        this.setData({ connected: false });
-        this.startDiscovery();
-      }
-    });
-    
-    this.discoverServices(deviceId);
   },
   
   async discoverServices(deviceId) {
@@ -335,7 +349,7 @@ Page({
       this.getCharacteristics(deviceId, targetService.uuid);
     } catch (err) {
       this.handleError("❌ 服务发现失败", err);
-      this.setData({ connecting: false, connected: false });
+      this.setData({ connecting: false, connected: false, deviceId: null });
       this.forceDisconnect(deviceId);
     }
   },
@@ -400,14 +414,22 @@ Page({
       this.enableNotifications();
     } catch (err) {
       this.handleError("❌ 特征值获取失败", err);
-      this.setData({ connecting: false, connected: false });
+      this.setData({ connecting: false, connected: false, deviceId: null });
       this.forceDisconnect(deviceId);
     }
   },
   
   enableNotifications() {
+    // 安全检测：确保deviceId有效
+    if (!this.data.deviceId) {
+      this.log("❌ 无法启用通知：缺少有效的设备ID");
+      return;
+    }
+    
     const { deviceId, serviceId, notifyCharId } = this.data;
     this.log("🔔 启用通知...");
+    this.log(`[INFO] 设备ID: ${deviceId}`);
+    
     wx.notifyBLECharacteristicValueChange({
       deviceId,
       serviceId,
@@ -433,50 +455,60 @@ Page({
   
   sendData() {
     const { deviceId, serviceId, writeCharId } = this.data;
-    if (!serviceId || !writeCharId) {
-      this.handleError("❌ 发送失败", { errMsg: "未获取到蓝牙特征值" });
+    
+    // 验证必要参数
+    if (!serviceId || !writeCharId || !deviceId) {
+      this.handleError("❌ 发送失败", { errMsg: "蓝牙参数无效" });
       return;
     }
-    const sdata = "AABBCCDD";
+    
+    const data = "AABBCCDD"; // 示例数据
     wx.writeBLECharacteristicValue({
       deviceId,
       serviceId,
       characteristicId: writeCharId,
-      value: this.hex2ab(sdata),
-      //value: sdata,
+      value: this.hex2ab(data),
       success: () => this.log(`📤 发送成功: ${data}`),
       fail: (err) => this.handleError("❌ 发送失败", err)
     });
   },
   
   disconnect() {
-    const { deviceId } = this.data.currentDevice;
+    if (!this.data.currentDevice || !this.data.deviceId) {
+      this.log("⚠️ 无有效连接可断开");
+      return;
+    }
     
-    this.forceDisconnect(deviceId).then(() => {
+    this.forceDisconnect(this.data.deviceId).then(() => {
       wx.stopBluetoothDevicesDiscovery({
         success: () => {
-          this.startDiscovery();
+          this.log("已停止蓝牙扫描");
         }
       });
+      
+      this.setData({
+        connected: false,
+        currentDevice: null,
+        deviceId: null, // 清除设备ID
+        showDeviceList: true
+      });
+      
+      this.log("🔌 已断开连接");
     });
-    
-    this.setData({
-      connected: false,
-      currentDevice: null,
-      showDeviceList: true
-    });
-    
-    this.log("🔌 已断开连接");
   },
   
   ab2hex(buffer) {
+    if (!buffer || buffer.byteLength === 0) return "";
     return Array.from(new Uint8Array(buffer))
       .map(b => b.toString(16).padStart(2, '0'))
       .join('');
   },
   
   hex2ab(hex) {
-    const bytes = new Uint8Array(hex.match(/[\da-f]{2}/gi).map(h => parseInt(h, 16)));
+    const matches = hex.match(/[\da-f]{2}/gi);
+    if (!matches) return new ArrayBuffer(0);
+    
+    const bytes = new Uint8Array(matches.map(h => parseInt(h, 16)));
     return bytes.buffer;
   },
   
@@ -488,7 +520,7 @@ Page({
   
   onUnload() {
     if (this.data.connected) {
-      const deviceId = this.data.currentDevice.deviceId;
+      const deviceId = this.data.currentDevice?.deviceId || this.data.deviceId;
       this.forceDisconnect(deviceId);
       wx.stopBluetoothDevicesDiscovery();
       wx.closeBluetoothAdapter();
