@@ -21,7 +21,8 @@
                 <view class="device-header">
                   <text class="device-name">{{item.localName || item.name || '未知设备'}}</text>
                   <view class="device-rssi">
-                    <view class="signal-icon" style="height: {{item.RSSI ? (0 - item.RSSI)/5 : 0}}px"></view>
+                    <!-- 修复：信号强度显示方向 -->
+                    <view class="signal-icon" style="height: {{item.RSSI ?  item.RSSI * 0.5 : 0}}rpx"></view>
                     <text>{{item.RSSI || '未知'}}dBm</text>
                   </view>
                 </view>
@@ -37,19 +38,35 @@
     <view class="connected-panel" wx:if="{{connected}}">
       <view class="device-header">
         <text class="device-status">已连接</text>
-        <text class="device-name">{{currentDevice.localName || currentDevice.name || currentDevice.deviceId.substr(0,12)}}</text>
+        <text class="device-name">{{currentDevice.localName || currentDevice.name || deviceId.substr(0,12)}}</text>
       </view>
       
       <view class="connection-details">
+        <!-- 修复：设备ID显示 -->
         <view class="detail-card">
           <text class="detail-label">设备ID</text>
-          <text class="detail-value">{{currentDevice.deviceId.substr(0,12)}}...</text>
+          <text class="detail-value">{{deviceId ? deviceId.substr(0,12) + '...' : '未知'}}</text>
         </view>
         <view class="detail-card">
           <text class="detail-label">信号强度</text>
           <view class="signal-section">
-            <view class="signal-icon" style="height: {{currentDevice.RSSI ? (0 - currentDevice.RSSI)/5 : 0}}px"></view>
-            <text>{{currentDevice.RSSI || '未知'}}dBm</text>
+            <view class="signal-indicator">
+              <view class="signal-bars">
+                <!-- 修复：信号柱形图上色方向 -->
+                <view class="signal-bar {{currentDevice.RSSI >= -95 ? 'active' : ''}}"></view>
+                <view class="signal-bar {{currentDevice.RSSI >= -85 ? 'active' : ''}}"></view>
+                <view class="signal-bar {{currentDevice.RSSI >= -75 ? 'active' : ''}}"></view>
+                <view class="signal-bar {{currentDevice.RSSI >= -65 ? 'active' : ''}}"></view>
+              </view>
+              <view class="signal-info">
+                <view class="signal-value-row">
+                  <text class="signal-value">{{currentDevice.RSSI || '未知'}}dBm</text>
+                  <text class="distance-indicator {{getDistanceClass(currentDevice.RSSI)}}">
+                    {{getDistanceText(currentDevice.RSSI)}}
+                  </text>
+                </view>
+              </view>
+            </view>
           </view>
         </view>
       </view>
@@ -58,15 +75,18 @@
         <button class="btn btn-command" bindtap="sendData">发送测试数据</button>
         <button class="btn btn-danger" bindtap="disconnect">断开连接</button>
       </view>
-
-
+      
+      <!-- 发送数据面板 -->
       <view class="senddata-panel">
         <text class="section-title">发送的数据</text>
         <view class="senddata-view">
-          <textarea class="senddata-content" type="" >{{sendData || '等待数据...'}}</textarea>
+          <textarea class="senddata-content" 
+                    value="{{sendData}}" 
+                    bindinput="onSendDataInput" 
+                    placeholder="输入要发送的数据..."></textarea>
         </view>
       </view>
-
+      
       <view class="data-panel">
         <text class="section-title">接收数据</text>
         <view class="data-view">
