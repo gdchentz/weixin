@@ -1,3 +1,4 @@
+
 /* pages/ble/index.wxss */
 .page-container {
   display: flex;
@@ -7,9 +8,8 @@
   background-color: #f8f9fb;
 }
 
-/* 内容区域 - 保持原有比例 */
 .content-area {
-  flex: 3; /* 分配更多空间给内容区域 */
+  flex: 3;
   margin-bottom: 15rpx;
   background-color: white;
   border-radius: 12rpx;
@@ -19,7 +19,6 @@
   flex-direction: column;
 }
 
-/* 设备面板 */
 .device-panel {
   padding: 20rpx;
   display: flex;
@@ -31,7 +30,6 @@
   margin-bottom: 20rpx;
 }
 
-/* 按钮统一样式 */
 .btn {
   font-size: 14px;
   border-radius: 8rpx;
@@ -76,7 +74,6 @@
   display: inline;
 }
 
-/* 加载动画 */
 .loading-circle {
   width: 22rpx;
   height: 22rpx;
@@ -91,7 +88,6 @@
   to { transform: rotate(360deg); }
 }
 
-/* 设备发现区域 - 无高度限制 */
 .device-section {
   padding-top: 10rpx;
   display: flex;
@@ -168,7 +164,6 @@
   border-radius: 2px;
 }
 
-/* 已连接面板 */
 .connected-panel {
   padding: 20rpx;
   display: flex;
@@ -237,10 +232,107 @@
   flex: 1;
 }
 
-/* 数据区域 */
+.signal-indicator {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+
+.signal-bars {
+  display: flex;
+  align-items: flex-end;
+  height: 30rpx;
+  gap: 4rpx;
+}
+
+.signal-bar {
+  width: 8rpx;
+  background-color: #e0e0e0;
+  border-radius: 4rpx;
+  transition: all 0.3s;
+}
+
+.signal-bar:nth-child(1) { height: 8rpx; }
+.signal-bar:nth-child(2) { height: 16rpx; }
+.signal-bar:nth-child(3) { height: 24rpx; }
+.signal-bar:nth-child(4) { height: 30rpx; }
+
+.signal-bar.active {
+  background-color: #07c160;
+}
+
+.signal-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.signal-value-row {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.signal-value {
+  font-size: 12px;
+  color: #666;
+}
+
+.distance-indicator {
+  font-size: 12px;
+  font-weight: bold;
+  padding: 2rpx 8rpx;
+  border-radius: 10rpx;
+}
+
+.distance-indicator.close {
+  background-color: rgba(7, 193, 96, 0.15);
+  color: #07c160;
+}
+
+.distance-indicator.medium {
+  background-color: rgba(25, 137, 250, 0.15);
+  color: #1989fa;
+}
+
+.distance-indicator.far {
+  background-color: rgba(255, 165, 0, 0.15);
+  color: #ffa500;
+}
+
+.distance-indicator.very-far {
+  background-color: rgba(238, 10, 36, 0.15);
+  color: #ee0a24;
+}
+
+.distance-indicator.unknown {
+  background-color: rgba(153, 153, 153, 0.15);
+  color: #999;
+}
+
+.senddata-panel {
+  margin: 15rpx 0;
+  padding: 15rpx 0;
+  border-top: 1rpx solid #eee;
+  border-bottom: 1rpx solid #eee;
+}
+
+.senddata-view {
+  background: #f9f9f9;
+  border-radius: 8rpx;
+  margin-top: 10rpx;
+  padding: 15rpx;
+}
+
+.senddata-content {
+  width: 100%;
+  min-height: 120rpx;
+  font-size: 14px;
+  background: transparent;
+  border: none;
+}
+
 .data-panel {
   padding-top: 15rpx;
-  border-top: 1rpx solid #eee;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -262,7 +354,6 @@
   line-height: 1.5;
 }
 
-/* 日志面板 */
 .log-panel {
   flex: 1;
   background-color: white;
@@ -300,3 +391,33 @@
   border-bottom: 1rpx solid #f7f7f7;
   font-size: 13px;
 }
+
+/* pages/ble/index.wxss */
+/* ...其他样式保持不变... */
+
+/* 信号柱形图样式 - 修复上色方向 */
+.signal-bars {
+  display: flex;
+  align-items: flex-end;
+  height: 30rpx;
+  gap: 4rpx;
+}
+
+.signal-bar {
+  width: 8rpx;
+  background-color: #e0e0e0;
+  border-radius: 4rpx;
+  transition: all 0.3s;
+}
+
+/* 修复：柱形图高度顺序 */
+.signal-bar:nth-child(1) { height: 30rpx; }
+.signal-bar:nth-child(2) { height: 24rpx; }
+.signal-bar:nth-child(3) { height: 16rpx; }
+.signal-bar:nth-child(4) { height: 8rpx; }
+
+.signal-bar.active {
+  background-color: #07c160;
+}
+
+/* ...其他样式保持不变... */

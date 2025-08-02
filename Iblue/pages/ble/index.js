@@ -9,7 +9,7 @@ Page({
     connected: false,
     connecting: false,
     receivedData: "",
-    sendData:"testtext",
+    sendData: "testtext", // 初始发送数据
     currentDevice: null,
     log: [],
     serviceId: "6E400001-B5A3-F393-E0A9-E50E24DCCA9E",
@@ -22,19 +22,13 @@ Page({
     isDiscovering: false,
     knownDevices: {},
     connectionTimer: null,
-    deviceId: null, // 初始化为null确保有效状态
+    deviceId: null, // 设备ID存储在data.deviceId中
+    lastRssiUpdate: 0,
+    rssiInterval: null,
   },
   
   onReady() {
     this.calculateScrollHeight();
-  },
-  
-  onShareAppMessage() {
-    return { title: '测试标题', path: '/pages/index/index' };
-  },
-  
-  onShareTimeline() {
-    return { title: '朋友圈标题' };
   },
   
   calculateScrollHeight() {
@@ -72,10 +66,37 @@ Page({
     });
   },
   
+  onSendDataInput(e) {
+    this.setData({
+      sendData: e.detail.value
+    });
+  },
+  
+  // 获取距离文本
+  getDistanceText(rssi) {
+    if (rssi === null || rssi === undefined || rssi === 0) return '距离未知';
+    
+    if (rssi >= -65) return '近距离';
+    if (rssi >= -75) return '中距离';
+    if (rssi >= -85) return '远距离';
+    return '超远距离';
+  },
+  
+  // 获取距离类别
+  getDistanceClass(rssi) {
+    if (rssi === null || rssi === undefined || rssi === 0) return 'unknown';
+    
+    if (rssi >= -65) return 'close';
+    if (rssi >= -75) return 'medium';
+    if (rssi >= -85) return 'far';
+    return 'very-far';
+  },
+  
   initBluetooth() {
     this.setData({ 
       devices: [],
-      knownDevices: {}
+      knownDevices: {},
+      lastRssiUpdate: 0
     });
     
     if (wx.clearBleCache) {
@@ -100,7 +121,8 @@ Page({
     this.stopDiscovery().then(() => {
       this.setData({ 
         showDeviceList: true,
-        isDiscovering: true
+        isDiscovering: true,
+        lastRssiUpdate: Date.now()
       });
       
       wx.startBluetoothDevicesDiscovery({
@@ -139,7 +161,8 @@ Page({
           const newDevice = {
             ...device,
             localName,
-            lastSeen: now
+            lastSeen: now,
+            rssiHistory: [device.RSSI]
           };
           updatedDevices.push(newDevice);
           knownDevices[deviceId] = newDevice;
@@ -147,18 +170,21 @@ Page({
           
           this.log(`发现新设备: ${localName}`);
         } else {
-          const lastUpdateTime = knownDevices[deviceId].lastSeen || 0;
-          
-          if (now - lastUpdateTime > DEVICE_UPDATE_INTERVAL) {
-            const existingIndex = updatedDevices.findIndex(d => d.deviceId === deviceId);
-            if (existingIndex !== -1) {
-              updatedDevices[existingIndex].RSSI = device.RSSI;
-              updatedDevices[existingIndex].lastSeen = now;
-              knownDevices[deviceId] = updatedDevices[existingIndex];
-              hasUpdates = true;
-              
-              this.log(`更新设备信号: ${localName} | ${device.RSSI}dBm`);
+          const existingIndex = updatedDevices.findIndex(d => d.deviceId === deviceId);
+          if (existingIndex !== -1) {
+            updatedDevices[existingIndex].RSSI = device.RSSI;
+            updatedDevices[existingIndex].lastSeen = now;
+            
+            if (!updatedDevices[existingIndex].rssiHistory) {
+              updatedDevices[existingIndex].rssiHistory = [];
             }
+            updatedDevices[existingIndex].rssiHistory.push(device.RSSI);
+            if (updatedDevices[existingIndex].rssiHistory.length > 5) {
+              updatedDevices[existingIndex].rssiHistory.shift();
+            }
+            
+            knownDevices[deviceId] = updatedDevices[existingIndex];
+            hasUpdates = true;
           }
         }
       });
@@ -166,7 +192,8 @@ Page({
       if (hasUpdates) {
         this.setData({
           devices: updatedDevices,
-          knownDevices: knownDevices
+          knownDevices: knownDevices,
+          lastRssiUpdate: now
         });
       }
     });
@@ -200,12 +227,10 @@ Page({
     this.setData({ 
       connecting: true, 
       retryCount: 0,
-      // 关键修复：立即存储设备ID
-      deviceId: deviceId
+      deviceId: deviceId // 存储设备ID到data.deviceId
     });
     
     this.log(`🔗 连接设备: ${device.localName || device.name || deviceId.substr(0,6)}...`);
-    this.log(`[DEBUG] 连接开始: 当前deviceId = ${this.data.deviceId}`);
     
     this.setConnectionTimeout(deviceId);
     
@@ -288,32 +313,56 @@ Page({
   },
   
   onConnectSuccess(deviceId, device) {
-    // 关键修复：正确更新deviceId状态
     this.setData({ 
       connected: true,
-      deviceId: deviceId, // 使用成功连接的deviceId
+      deviceId: deviceId, // 存储设备ID到data.deviceId
       currentDevice: device,
       isDiscovering: false,
       connecting: false
     }, () => {
-      // 确认状态更新成功
       this.log(`✅ 状态更新完成 deviceId: ${this.data.deviceId}`);
       
-      // 设置连接状态监听
+      // 连接成功后开始定期更新RSSI
+      this.startRssiMonitoring();
+      
       wx.onBLEConnectionStateChange((res) => {
         if (!res.connected) {
           this.log("⚠️ 连接断开，释放资源");
           this.setData({ 
             connected: false,
-            deviceId: null // 清除设备ID
+            deviceId: null
           });
+          clearInterval(this.rssiInterval);
           this.startDiscovery();
         }
       });
       
-      // 开始服务发现
       this.discoverServices(deviceId);
     });
+  },
+  
+  startRssiMonitoring() {
+    if (this.rssiInterval) {
+      clearInterval(this.rssiInterval);
+    }
+    
+    this.rssiInterval = setInterval(() => {
+      if (this.data.connected && this.data.deviceId) {
+        wx.getBLEDeviceRSSI({
+          deviceId: this.data.deviceId,
+          success: (res) => {
+            if (res.RSSI !== 0) {
+              this.setData({
+                'currentDevice.RSSI': res.RSSI
+              });
+            }
+          },
+          fail: (err) => {
+            console.error('获取RSSI失败:', err);
+          }
+        });
+      }
+    }, 2000);
   },
   
   async discoverServices(deviceId) {
@@ -421,7 +470,6 @@ Page({
   },
   
   enableNotifications() {
-    // 安全检测：确保deviceId有效
     if (!this.data.deviceId) {
       this.log("❌ 无法启用通知：缺少有效的设备ID");
       return;
@@ -429,7 +477,6 @@ Page({
     
     const { deviceId, serviceId, notifyCharId } = this.data;
     this.log("🔔 启用通知...");
-    this.log(`[INFO] 设备ID: ${deviceId}`);
     
     wx.notifyBLECharacteristicValueChange({
       deviceId,
@@ -457,20 +504,21 @@ Page({
   sendData() {
     const { deviceId, serviceId, writeCharId } = this.data;
     
-    // 验证必要参数
     if (!serviceId || !writeCharId || !deviceId) {
       this.handleError("❌ 发送失败", { errMsg: "蓝牙参数无效" });
       return;
     }
-    // const data = "aafjkadjfa"; // 示例数据
-    const data = this.data.sendData; // 示例数据
-    // this.log(`发送数据：${this.data.sendData}`)
+    
+    const data = this.data.sendData;
+    
+    this.log(`📤 发送数据: ${data}`);
+    
     wx.writeBLECharacteristicValue({
       deviceId,
       serviceId,
       characteristicId: writeCharId,
       value: this.hex2ab(data),
-      success: () => this.log(`📤 发送成功: ${data}`),
+      success: () => this.log(`✅ 发送成功: ${data}`),
       fail: (err) => this.handleError("❌ 发送失败", err)
     });
   },
@@ -488,10 +536,12 @@ Page({
         }
       });
       
+      clearInterval(this.rssiInterval);
+      
       this.setData({
         connected: false,
         currentDevice: null,
-        deviceId: null, // 清除设备ID
+        deviceId: null,
         showDeviceList: true
       });
       
@@ -509,7 +559,6 @@ Page({
   hex2ab(hex) {
     const matches = hex.match(/[\da-f]{2}/gi);
     if (!matches) return new ArrayBuffer(0);
-    
     const bytes = new Uint8Array(matches.map(h => parseInt(h, 16)));
     return bytes.buffer;
   },
@@ -522,13 +571,14 @@ Page({
   
   onUnload() {
     if (this.data.connected) {
-      const deviceId = this.data.currentDevice?.deviceId || this.data.deviceId;
+      const deviceId = this.data.deviceId;
       this.forceDisconnect(deviceId);
       wx.stopBluetoothDevicesDiscovery();
       wx.closeBluetoothAdapter();
       this.log("♻️ 蓝牙资源已释放");
     }
+    clearInterval(this.rssiInterval);
     wx.offBluetoothDeviceFound();
     wx.offBLEConnectionStateChange();
   }
-})
+});
